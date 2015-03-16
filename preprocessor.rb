@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 require 'fileutils'
+require 'shellwords'
 
 # µDino preprocessor
 # Inspired from https://github.com/ffissore/Arduino/blob/coanctags/arduino-core/src/processing/app/preproc/CTagsParser.java
@@ -72,7 +73,7 @@ end
 # Use ctags to create prototypes
 
 # Exectute ctags
-command = "#{File.dirname(__FILE__)}/ctags #{ctagsArguments} #{unifiedSourcePath}".force_encoding('UTF-8')
+command = "#{Shellwords.escape(File.dirname(__FILE__))}/ctags #{ctagsArguments} #{Shellwords.escape(unifiedSourcePath)}".force_encoding('UTF-8')
 ctagsOutput = %x[#{command}]
 
 # Parse ctags output
