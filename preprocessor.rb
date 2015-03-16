@@ -22,8 +22,8 @@ Please define a project and output folder
 
 Usage: ./preprocessor.rb project_folder output_folder
 
-EOF
-abort
+  EOF
+  abort
 end
 
 
@@ -60,8 +60,8 @@ Dir["#{File.expand_path(arduinoExtensionsWildcard)}"].each.map do |file|
   unifiedSource << File.read(file)
 end
 
-# Write unifiedSource as .ccp to outputFolder
-unifiedSourcePath = "#{outputFolder}#{projectName}.cpp"
+# Write unifiedSource as .ino to outputFolder
+unifiedSourcePath = "#{outputFolder}#{projectName}.ino"
 File.open(unifiedSourcePath, "w") { |file| file.write(unifiedSource) }
 
 # Copy ohter source files to outputFolder
@@ -156,10 +156,10 @@ prototypes = ""
 tags.each {|tag| prototypes << tag["prototype"] << "\n"}
 
 # Where to insert prototypes – find first statement
-text_patterns = '\s*#.*?$'     # Preprocessor directive
-text_patterns << '|\/\/.*?$'   # Single line comment
+text_patterns = '\s*#.*?$'      # Preprocessor directive
+text_patterns << '|\/\/.*?$'    # Single line comment
 text_patterns << '|\/\*[^*]*(?:\*(?!\/)[^*]*)*\*\/' # Multi line comment
-text_patterns << '|\s+' # Whitespace
+text_patterns << '|\s+'         # Whitespace
 text_pattern = Regexp.new(text_patterns)
 
 prototypeInsertPos = 0
@@ -170,5 +170,5 @@ end
 
 
 # Insert the prototypes and write file
-unifiedSource.insert(prototypeInsertPos, "\n" << prototypes)
+unifiedSource.insert(prototypeInsertPos, "\n" << prototypes << "\n")
 File.open(unifiedSourcePath, "w") { |file| file.write(unifiedSource) }
