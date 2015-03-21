@@ -85,7 +85,7 @@ end
 # Use ctags to create prototypes
 
 # Exectute ctags
-command = "#{Shellwords.escape(File.dirname(__FILE__))}/ctags #{ctagsArguments} #{Shellwords.escape(unifiedSourcePath)}".force_encoding('UTF-8')
+command = "#{Shellwords.escape(File.dirname(__FILE__))}/bin/ctags #{ctagsArguments} #{Shellwords.escape(unifiedSourcePath)}".force_encoding('UTF-8')
 ctagsOutput = %x[#{command}]
 
 # Parse ctags output
