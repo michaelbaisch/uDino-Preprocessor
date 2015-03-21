@@ -47,12 +47,12 @@ end
 # Empty outputFolder
 FileUtils.rm_rf(Dir.glob("#{outputFolder}*"))
 
-# Create wildcard
+# Create wildcards
 arduinoExtensionsWildcard = "#{projectFolder}#{arduinoExtensions}"
 otherExtensionsToCopyWildcard = "#{projectFolder}#{otherExtensionsToCopy}"
 
 # Gather all .ino and .pde files
-allFiles = Dir["#{File.expand_path(arduinoExtensionsWildcard)}"].each.map { |file| file }
+allFiles = Dir["#{File.expand_path(arduinoExtensionsWildcard)}"].each.map {|file| file }
 
 # Sort files
   # Main project file should be first
@@ -74,10 +74,10 @@ end
 
 # Write unifiedSource as .ino to outputFolder
 unifiedSourcePath = "#{outputFolder}#{projectName}.ino"
-File.open(unifiedSourcePath, "w") { |file| file.write(unifiedSource) }
+File.open(unifiedSourcePath, "w") {|file| file.write(unifiedSource) }
 
-# Copy ohter source files to outputFolder
-Dir["#{File.expand_path(otherExtensionsToCopyWildcard)}"].each.map do |file|
+# Copy other source files to outputFolder
+Dir["#{File.expand_path(otherExtensionsToCopyWildcard)}"].each do |file|
   FileUtils.copy(file, "#{outputFolder}#{File.basename(file)}")
 end
 
@@ -103,7 +103,7 @@ ctagsOutput.each_line do |row|
     if column.include?(":")
       colonIndex = column.index(":")
       fieldName = column[0...colonIndex]
-      if fields.include? fieldName
+      if fields.include? fieldName then
         tag[fieldName] = column[colonIndex+1..column.length()].chomp.strip
       end
     end
@@ -111,7 +111,7 @@ ctagsOutput.each_line do |row|
     if column.include?('/^') && column.include?('/;') then
       if column.include?('{') then
         tag["code"] = column[column.index("\^")+1...column.index("{")].chomp.strip
-      else
+      elsif column.include?(')') then
         tag["code"] = column[column.index("\^")+1..column.rindex(")")].chomp.strip
       end
     end
@@ -121,14 +121,10 @@ ctagsOutput.each_line do |row|
 end
 
 # Filter out unknown tags
-tags.delete_if do|tag|
-  if !knownTagKinds.include? tag["kind"]
-    true
-  end
-end
+tags.delete_if {|tag| !knownTagKinds.include?(tag["kind"]) }
 
 # Remove existing prototypes
-existingPrototypes = tags.select {|tag| tag["kind"] == "prototype"}
+existingPrototypes = tags.select {|tag| tag["kind"] == "prototype" }
 
 tags.delete_if do |tag|
   delete = false
@@ -143,9 +139,9 @@ end
 
 # Add prototypes
 tags.each do |tag|
-  if (tag["code"] != nil) && (tag["returntype"].start_with?("template") || tag["code"].start_with?("template")) then
+  if ((!tag["returntype"].nil? && tag["returntype"].start_with?("template")) || (!tag["code"].nil? && tag["code"].start_with?("template"))) && !tag["code"].nil? then
     tag["prototype"] = tag["code"]
-  else
+  elsif (!tag["returntype"].nil? && !tag["functionName"].nil? && !tag["signature"].nil?)
     prototype = tag["returntype"] << " " << tag["functionName"] << tag["signature"] << ";"
     tag["prototype"] = prototype
   end
@@ -161,11 +157,11 @@ tags.each do |tag|
 end
 
 # Sort prototypes
-tags.sort! { |x,y| x["line"].to_i <=> y["line"].to_i }
+tags.sort! {|x,y| x["line"].to_i <=> y["line"].to_i }
 
 # Create prototypes string
 prototypes = ""
-tags.each {|tag| prototypes << tag["prototype"] << "\n"}
+tags.each {|tag| prototypes << tag["prototype"] << "\n" }
 
 # Where to insert prototypes – find first statement
 text_patterns = '\s*#.*?$'      # Preprocessor directive
@@ -180,11 +176,9 @@ unifiedSource.gsub(text_pattern) do |match|
   prototypeInsertPos = $~.end(0)
 end
 
-
 prototypeInsertLineNubmerOffset = unifiedSource[0...prototypeInsertPos].scan(/#line\s/).count
 prototypeInsertLineNubmer = unifiedSource[0...prototypeInsertPos].lines.count - prototypeInsertLineNubmerOffset + 1   # start at line 1
-puts prototypeInsertLineNubmer
 
 # Insert the prototypes and write file
 unifiedSource.insert(prototypeInsertPos, prototypes << "#line #{prototypeInsertLineNubmer}" << "\n")
-File.open(unifiedSourcePath, "w") { |file| file.write(unifiedSource) }
+File.open(unifiedSourcePath, "w") {|file| file.write(unifiedSource) }
