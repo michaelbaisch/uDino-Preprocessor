@@ -8,8 +8,7 @@ require 'shellwords'
 # Inspired from https://github.com/ffissore/Arduino/blob/coanctags/arduino-core/src/processing/app/preproc/CTagsParser.java
 
 
-orgctagsArguments = "-u --language-force=c++ -f - --c++-kinds=svpf --fields=KSTtzn"
-ctagsArguments = "--language-force=c++ -f - --c++-kinds=pf --fields=KSTtzn"
+ctagsArguments = "--language-force=c++ -f - --c++-kinds=pf --fields=KSTtzn"   # Original: --c++-kinds=svpf
 fields = ['kind', 'line', 'typeref', 'signature', 'returntype']
 knownTagKinds = ["prototype", "function"]
 arduinoExtensions = "{*.ino,*.pde}"
@@ -52,12 +51,25 @@ FileUtils.rm_rf(Dir.glob("#{outputFolder}*"))
 arduinoExtensionsWildcard = "#{projectFolder}#{arduinoExtensions}"
 otherExtensionsToCopyWildcard = "#{projectFolder}#{otherExtensionsToCopy}"
 
+# Gather all .ino and .pde files
+allFiles = Dir["#{File.expand_path(arduinoExtensionsWildcard)}"].each.map { |file| file }
+
+# Sort files
+  # Main project file should be first
+  # Sort alphabetically
+allFiles.sort! do |x,y|
+  #File.basename(x, ".*") == projectName ? -1 : File.basename(y, ".*") == projectName ? 1 : File.basename(x) <=> File.basename(y)
+  if File.basename(x, ".*") == projectName then -1
+  elsif File.basename(y, ".*") == projectName then 1
+  else File.basename(x) <=> File.basename(y) end
+end
 
 # Unify .ino and .pde files
 unifiedSource = ""
-Dir["#{File.expand_path(arduinoExtensionsWildcard)}"].each.map do |file|
-  unifiedSource << "\n// \"#{File.basename(file)}\"\n"
+allFiles.each do |file|
+  unifiedSource << "#line 1 \"#{File.basename(file)}\"\n"
   unifiedSource << File.read(file)
+  unifiedSource << "\n" if !unifiedSource.end_with?("\n")
 end
 
 # Write unifiedSource as .ino to outputFolder
@@ -131,7 +143,7 @@ end
 
 # Add prototypes
 tags.each do |tag|
-  if tag["returntype"].start_with?("template") || tag["code"].start_with?("template") then
+  if (tag["code"] != nil) && (tag["returntype"].start_with?("template") || tag["code"].start_with?("template")) then
     tag["prototype"] = tag["code"]
   else
     prototype = tag["returntype"] << " " << tag["functionName"] << tag["signature"] << ";"
@@ -169,6 +181,10 @@ unifiedSource.gsub(text_pattern) do |match|
 end
 
 
+prototypeInsertLineNubmerOffset = unifiedSource[0...prototypeInsertPos].scan(/#line\s/).count
+prototypeInsertLineNubmer = unifiedSource[0...prototypeInsertPos].lines.count - prototypeInsertLineNubmerOffset + 1   # start at line 1
+puts prototypeInsertLineNubmer
+
 # Insert the prototypes and write file
-unifiedSource.insert(prototypeInsertPos, "\n" << prototypes << "\n")
+unifiedSource.insert(prototypeInsertPos, prototypes << "#line #{prototypeInsertLineNubmer}" << "\n")
 File.open(unifiedSourcePath, "w") { |file| file.write(unifiedSource) }
