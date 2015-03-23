@@ -13,6 +13,7 @@ fields = ['kind', 'line', 'typeref', 'signature', 'returntype']
 knownTagKinds = ["prototype", "function"]
 arduinoExtensions = "{*.ino,*.pde}"
 otherExtensionsToCopy = "{*.cpp,*.c,*.h,*.S}"
+allExtensions = arduinoExtensions[0..-2] << "," << otherExtensionsToCopy[1..-1]
 
 
 if !(ARGV.length > 1)
@@ -44,12 +45,14 @@ if Dir["#{File.expand_path("#{projectFolder}#{projectName}#{arduinoExtensions}")
   abort "Project folder doesn't look like an Arduino project folder"
 end
 
-# Empty outputFolder
-FileUtils.rm_rf(Dir.glob("#{outputFolder}*"))
 
 # Create wildcards
 arduinoExtensionsWildcard = "#{projectFolder}#{arduinoExtensions}"
 otherExtensionsToCopyWildcard = "#{projectFolder}#{otherExtensionsToCopy}"
+allExtensionsOutputFolderWildcard = "#{outputFolder}#{allExtensions}"
+
+# Empty outputFolder
+Dir["#{File.expand_path(allExtensionsOutputFolderWildcard)}"].each {|file| File.delete(file) }
 
 # Gather all .ino and .pde files
 allFiles = Dir["#{File.expand_path(arduinoExtensionsWildcard)}"].each.map {|file| file }
