@@ -76,7 +76,7 @@ allFiles.each do |file|
 end
 
 # Write unifiedSource as .ino to outputFolder
-unifiedSourcePath = "#{outputFolder}#{projectName}.ino"
+unifiedSourcePath = "#{outputFolder}preprocessed-#{projectName}.ino"
 File.open(unifiedSourcePath, "w") {|file| file.write(unifiedSource) }
 
 # Copy other source files to outputFolder
